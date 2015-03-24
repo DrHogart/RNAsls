@@ -44,27 +44,17 @@ my @resulted_table;
 my $seq_in = Bio::SeqIO->new(-file => "<$InputFile", 
                              -format => 'fasta');
 
-# Deal with individual sequences: save to file & find the candidate hairpins
+# Deal with individual sequences: find the candidate hairpins
 while (my $seq = $seq_in->next_seq) {
   
   # the name of the current sequence
   my $name = $seq->primary_id();
   
-  # rand number for temp files
-  my $rand = int(rand(999));
-  my $temp_fasta = 'temp.'.$rand.'.fasta';
-  my $temp_str = 'temp.'.$rand.'.str';
-
-  # save sequence to file
-  my $seq_out = Bio::SeqIO->new(-file   => ">$temp_fasta",
-                                -format => 'fasta');
-  $seq_out->write_seq($seq);
-
-  # Run of RNALfold
-  print `RNALfold -L $W -T $T < $temp_fasta > $temp_str`;
+  # call RNALfold
+  my $RNALfold_file = run_RNALfold($seq);
 
   # Parsing of RNALfold results
-  my @folded_hairpins = RNALfold_parsing("$temp_str", $name); 
+  my @folded_hairpins = RNALfold_parsing($RNALfold_file, $name); 
 
   # measuring of distance between detected hairpins and canonical RNA loc signals
   my @distances = distance_measure(@folded_hairpins);
@@ -72,10 +62,8 @@ while (my $seq = $seq_in->next_seq) {
   # discarding candidate hairpins having too large distance (> $max_value)
   my @filtered_distances = distance_filtering($max_distance, @distances);
 
+  # collect the results
   push @resulted_table, @filtered_distances;
-
-  unlink($temp_fasta);
-  unlink($temp_str);
 
 }
 
@@ -84,6 +72,28 @@ print STDOUT @resulted_table;
 
 #### SUBROUTINES HERE #####
 #--------------------------
+
+sub run_RNALfold {
+
+  my $seq = @_[0];
+
+  # rand number for temp files
+  my $rand = int(rand(999));
+  my $temp_fasta = 'temp.'.$rand.'.fasta';
+  my $temp_str = 'temp.'.$rand.'.str';
+
+  my $seq_out = Bio::SeqIO->new(-file   => ">$temp_fasta",
+                                -format => 'fasta');
+  $seq_out->write_seq($seq);
+
+  # Run of RNALfold
+  print `RNALfold -L $W -T $T < $temp_fasta > $temp_str`;
+
+  unlink($temp_fasta);
+  return($temp_str);
+
+}
+
 
 sub RNALfold_parsing {
 
@@ -114,6 +124,7 @@ sub RNALfold_parsing {
       }
     }
 
+  unlink($file);
   return(@parsed_results)
 }
 
@@ -173,7 +184,6 @@ sub distance_measure {
   }
 
   undef(@strs);
-
   return(@resulted_distance)
 }
 
