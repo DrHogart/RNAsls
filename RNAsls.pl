@@ -11,6 +11,7 @@
 
 use strict;
 use Getopt::Std;
+use Bio::SeqIO;
 
 # fetch options
 my %options;
@@ -37,57 +38,52 @@ my @SS_Seqs   =
    );
 
 
-# Parsing of input file
-my ($name, $InputFileParsed) = inputFile_parsing($InputFile);
+my @resulted_table;
 
-# Run of RNALfold
-my $OutputFile  = $InputFileParsed;
-$OutputFile =~ s/.no_nl//g;
-$OutputFile .= ".output_$T" . "_$W";
-print `RNALfold -L $W -T $T < $InputFileParsed > $OutputFile`;
+# Loading of input file
+my $seq_in = Bio::SeqIO->new(-file => "<$InputFile", 
+                             -format => 'fasta');
 
-# Parsing of RNALfold results
-my @folded_hairpins = RNALfold_parsing($OutputFile, $name);
+# Deal with individual sequences: save to file & find the candidate hairpins
+while (my $seq = $seq_in->next_seq) {
+  
+  # the name of the current sequence
+  my $name = $seq->primary_id();
+  
+  # rand number for temp files
+  my $rand = int(rand(999));
+  my $temp_fasta = 'temp.'.$rand.'.fasta';
+  my $temp_str = 'temp.'.$rand.'.str';
 
-# measuring of distance between detected haipins and canonical RNA loc signals
-my @distances = distance_measure(@folded_hairpins);
+  # save sequence to file
+  my $seq_out = Bio::SeqIO->new(-file   => ">$temp_fasta",
+                                -format => 'fasta');
+  $seq_out->write_seq($seq);
 
-# filtering of results with max_distance
-my @filtered_distances = distance_filtering($max_distance, @distances);
+  # Run of RNALfold
+  print `RNALfold -L $W -T $T < $temp_fasta > $temp_str`;
 
-print STDOUT @filtered_distances;
+  # Parsing of RNALfold results
+  my @folded_hairpins = RNALfold_parsing("$temp_str", $name); 
+
+  # measuring of distance between detected haipins and canonical RNA loc signals
+  my @distances = distance_measure(@folded_hairpins);
+
+  # filtering of results with max_distance
+  my @filtered_distances = distance_filtering($max_distance, @distances);
+
+  push @resulted_table, @filtered_distances;
+
+  unlink($temp_fasta);
+  unlink($temp_str);
+
+}
+
+print STDOUT @resulted_table;
+
 
 #### SUBROUTINES HERE #####
 #--------------------------
-
-sub inputFile_parsing {
-
-  my($InputFile, $Header, $Length, $WholeInput, $NewInputFile);
-
-  $InputFile = $_[0];
-  open(INPUT, "$InputFile") || die "Can't open $InputFile: $!\n";
-  while (<INPUT>) { $WholeInput .= $_; }
-  close INPUT || die "Can't close $InputFile: $!\n";
-
-  # Deal with header
-  $WholeInput =~ m/(>.*)/;
-  $Header = $1;
-  $Header =~ s/^>//g;
-  chomp($Header);
-
-  # Remove Newline characters, for RNALfold input
-  $WholeInput =~ s/^\>.*//g;
-  $WholeInput =~ s/\n//g;
-
-  $NewInputFile = $InputFile . ".no_nl";
-
-  open (NEWINPUT, ">$NewInputFile") || die "Can't open $NewInputFile: $!\n";
-  print NEWINPUT "$WholeInput\n";
-  close NEWINPUT || die "Can't close $NewInputFile: $!\n";
-
-  return ($Header, $NewInputFile);
-}
-
 
 sub RNALfold_parsing {
 
@@ -125,8 +121,6 @@ sub RNALfold_parsing {
       }
     }
 
-  unlink($file);
-  unlink($InputFileParsed);
   return(@parsed_results)
 }
 
@@ -142,7 +136,8 @@ sub distance_measure {
 
     for(my $j=0; $j<=$#QuerySeqs; $j++) {
       # Compare each structure to the query & get a score for it
-      my $StructFile = "temp.file";
+      my $rand = int(rand(999));
+      my $StructFile = "temp.".$rand.".dat";
       open(STRUCT, ">$StructFile") || die "Can't open $StructFile: $!\n";
       print STRUCT "$SS_Seqs[$j]\n$str\n";
       close STRUCT || die "Can't close $StructFile: $!\n";
@@ -157,7 +152,7 @@ sub distance_measure {
       undef($Dist_Out); 
 
       #RNAforester similarity
-      my $ForesterFile = "temp.file";
+      my $ForesterFile = "temp.".$rand.".dat";
 
       open (FOREST, ">$ForesterFile") || die "Can't open $ForesterFile: $!\n";
       print FOREST ">Query\n$QuerySeqs[$j]\n$SS_Seqs[$j]\n";
@@ -175,6 +170,7 @@ sub distance_measure {
  
       $DistScore[$j] .= ',' . sprintf("%.0f", $Forest_Out_1);
 
+      unlink($StructFile);
       undef($Forest_Out_1); 
     }
 
@@ -213,16 +209,12 @@ sub distance_filtering {
       if ($s[0] < $min_value) {
         $min_value = $s[0];
       }
-#      if ($s[1] < $min_value) {
-#        $min_value = $s[1]
-#      }
       push @new_score, sprintf("[%.2f][%.2f]", $s[0], $s[1]);
     }
-#    print STDOUT join(" ", $min_value, $ID, $scores, join(':', @new_score)), "\n";
-    # filtering
+
     if ($min_value <= $threshold) {
       my $scores = join('-', @new_score);
-      push @filtered_distance, join("\t", $ID, $start, 'Scores='.$scores, $sequence, $str, $dG),"\n";
+      push @filtered_distance, join("\t", $ID, $start, 'Scores='.$scores, $dG, $sequence, $str,),"\n";
     }
   }
 
