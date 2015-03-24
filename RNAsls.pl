@@ -6,7 +6,7 @@
 # (http://dx.doi.org/10.1261/rna.1264109).
 # The original source code: https://github.com/darogan/RNA2DSearch
 #
-# The program is distribited under GNU license, v.3:
+# The program is distribited under GNU license, v.3.
 
 
 use strict;
@@ -66,10 +66,10 @@ while (my $seq = $seq_in->next_seq) {
   # Parsing of RNALfold results
   my @folded_hairpins = RNALfold_parsing("$temp_str", $name); 
 
-  # measuring of distance between detected haipins and canonical RNA loc signals
+  # measuring of distance between detected hairpins and canonical RNA loc signals
   my @distances = distance_measure(@folded_hairpins);
 
-  # filtering of results with max_distance
+  # discarding candidate hairpins having too large distance (> $max_value)
   my @filtered_distances = distance_filtering($max_distance, @distances);
 
   push @resulted_table, @filtered_distances;
@@ -91,33 +91,26 @@ sub RNALfold_parsing {
   my $name = @_[1];
   my @parsed_results;
 
-  # Deal with individual structure predictions
   open(STRUCTOUT, "$file") || die "Can't open $file: $!\n";
-  my @STRUCT_OUT = <STRUCTOUT>;
+  my @strs = <STRUCTOUT>;
   close STRUCTOUT || die "Can't close STRUCTOUT: $!\n";
 
-  my $input_sequence = $STRUCT_OUT[@STRUCT_OUT-2];
+  # fetch the whole sequence
+  my $input_sequence = $strs[@strs-2];
 
-  for(my $j=0; $j<=$#STRUCT_OUT; $j++) {
-    if($STRUCT_OUT[$j] =~ m/^[\.\(\)]/) {
-    #Deal With each structure output line from RNALfold
-        $STRUCT_OUT[$j] =~ s/\( /\(/g;
-        my ($str, $dG, $start) = split(/\s+/, $STRUCT_OUT[$j]);
-        # Structure
+  # Deal with individual structure predictions
+  for(my $j=0; $j<=$#strs; $j++) {
+    if($strs[$j] =~ m/^[\.\(\)]/) {
+        #Deal With each structure output line from RNALfold
+        chomp $strs[$j];
+        $strs[$j] =~ s/\( /\(/g;
+        my ($str, $dG, $start) = split(/\s+/, $strs[$j]);
         $str =~ s/ //g;
-        chomp($str);
-        # Energy
-        $dG =~ s/\(//g;
-        $dG =~ s/\)//g;
-        chomp($dG);
-        # Start
         $start =~ s/ //g;
-        chomp($start);
-        # Get the sequence for the structure
+        $dG =~ s/[\(\)]//g;
+        # Get the sequence for the structure and collect the results
         my $Seq = substr($input_sequence, $start-1, length($str));
-        # Print to big output file
-        my $name_subseq = $name.'_'.$j;
-        push @parsed_results, join("\t", $name_subseq, $str, $dG, $start, $Seq);
+        push @parsed_results, join("\t", $name.'_'.$j, $str, $dG, $start, $Seq);
       }
     }
 
@@ -127,11 +120,11 @@ sub RNALfold_parsing {
 
 sub distance_measure {
 
-  my @Structures = @_;
+  my @strs = @_;
   my @resulted_distance;
 
-  for(my $i=0; $i<=$#Structures; $i++) {
-    my ($ID, $str, $dG, $start, $sequence) = split(/\t/, $Structures[$i]);
+  for(my $i=0; $i<=$#strs; $i++) {
+    my ($ID, $str, $dG, $start, $sequence) = split(/\t/, $strs[$i]);
     my @DistScore;
 
     for(my $j=0; $j<=$#QuerySeqs; $j++) {
@@ -179,7 +172,7 @@ sub distance_measure {
     push @resulted_distance, "SEQ: $sequence", "SS_: $str";
   }
 
-  undef(@Structures);
+  undef(@strs);
 
   return(@resulted_distance)
 }
@@ -187,16 +180,16 @@ sub distance_measure {
 sub distance_filtering {
 
   my $threshold = shift @_;
-  my @Structures = @_;
+  my @strs = @_;
   my @filtered_distance;
 
   # normalization: RNAdistance x/100 and RNAforester 1/x
-  for(my $i=0; $i<=$#Structures; $i+=3) {
-    my ($rep, $ID, $size, $start, $scores, $dG) = split(/\s+/, $Structures[$i]);
-    my $sequence = $Structures[$i+1];
+  for(my $i=0; $i<=$#strs; $i+=3) {
+    my ($rep, $ID, $size, $start, $scores, $dG) = split(/\s+/, $strs[$i]);
+    my $sequence = $strs[$i+1];
     chomp $sequence;
     $sequence =~ s/SEQ: /Seq=/;
-    my $str = $Structures[$i+2];
+    my $str = $strs[$i+2];
     $str =~ s/SS_: /Str=/;
     $scores =~ s/Score=//;
     my @all_scores = split('-', $scores);
@@ -218,7 +211,7 @@ sub distance_filtering {
     }
   }
 
-  undef(@Structures);
+  undef(@strs);
   return(@filtered_distance);
 
 }
