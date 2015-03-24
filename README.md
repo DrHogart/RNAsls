@@ -19,7 +19,7 @@ perl RNAsls.pl -i InputFile.fasta -t 25 -w 64 -m 0.11 > OutputFile.txt
     - `-i` Input file with sequence in fasta format
     - `-t` Temperature for RNA folding, in Celsius scale (e.g. 25)
     - `-w` Maximum allowed length of the candidate hairpins, in nt. (e.g. 64)
-    - `-m` Maximum allowed distance between candidate hairpin and the canonical RNA localization signals. 'Distance' is a normalized [RNAdistance](http://rna.tbi.univie.ac.at/cgi-bin/RNAfold.cgi) score. (e.g. 0.11)
+    - `-m` Maximum allowed distance between candidate hairpin and the canonical RNA localization signals (e.g. 0.11). 'Distance' is a normalized [RNAdistance](http://rna.tbi.univie.ac.at/cgi-bin/RNAfold.cgi) score.
 
 * Output: The table with subsequences that have secondary structure similar to the canonical RNA localization signals. The level of similarity (distance) is presented in the `Scores` field as the set of score pairs. The first score in each pair is normalized [RNAdistance](http://rna.tbi.univie.ac.at/cgi-bin/RNAfold.cgi) score, while the second one is normalized and inversed [RNAforester](http://bibiserv.techfak.uni-bielefeld.de/rnaforester/) score. Since the comparison is performed with four known RNA localization signals, including GLS, ILS, G2LS, and JLS, the `Scores` field contains four pairs of scores.
 

@@ -49,10 +49,10 @@ print `RNALfold -L $W -T $T < $InputFileParsed > $OutputFile`;
 # Parsing of RNALfold results
 my @folded_hairpins = RNALfold_parsing($OutputFile, $name);
 
-# measuring of distance between founded haipins and canonical log signals
+# measuring of distance between detected haipins and canonical RNA loc signals
 my @distances = distance_measure(@folded_hairpins);
-#print STDOUT map {print $_, "\n"} @distances;
 
+# filtering of results with max_distance
 my @filtered_distances = distance_filtering($max_distance, @distances);
 
 print STDOUT @filtered_distances;
