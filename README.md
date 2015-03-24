@@ -8,7 +8,7 @@ The original source code of RNA2DSearch: https://github.com/darogan/RNA2DSearch.
 
 Usage
 =====
-* Prerequisites: [RNA Vienna package](http://rna.tbi.univie.ac.at) and [RNAforester](http://bibiserv.techfak.uni-bielefeld.de/rnaforester/).
+* Prerequisites: [BioPerl](http://www.bioperl.org/wiki/Main_Page), [RNA Vienna package](http://rna.tbi.univie.ac.at) and [RNAforester](http://bibiserv.techfak.uni-bielefeld.de/rnaforester/).
 
 * Example of usage:
 ```html
@@ -16,7 +16,7 @@ perl RNAsls.pl -i InputFile.fasta -t 25 -w 64 -m 0.11 > OutputFile.txt
 ```
 
 * Options
-    - `-i` Input file with sequence in fasta format
+    - `-i` Input file with sequence(-s) in fasta format
     - `-t` Temperature for RNA folding, in Celsius scale (e.g. 25)
     - `-w` Maximum allowed length of the candidate hairpins, in nt. (e.g. 64)
     - `-m` Maximum allowed distance between candidate hairpin and the canonical RNA localization signals (e.g. 0.11). 'Distance' is a normalized [RNAdistance](http://rna.tbi.univie.ac.at/cgi-bin/RNAfold.cgi) score.
