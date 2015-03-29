@@ -64,14 +64,13 @@ while (my $seq = $seq_in->next_seq) {
 
   # calculate randfold p-value
   my @add_randfold = compute_randfold_pvalue(\@filtered_distances);
-  print @add_randfold;
 
   # collect the results
   push @resulted_table, @filtered_distances;
 
 }
 
-#print STDOUT @resulted_table;
+print STDOUT @resulted_table;
 
 
 #### SUBROUTINES HERE #####
