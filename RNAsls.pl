@@ -62,12 +62,16 @@ while (my $seq = $seq_in->next_seq) {
   # discarding candidate hairpins having too large distance (> $max_value)
   my @filtered_distances = distance_filtering($max_distance, @distances);
 
+  # calculate randfold p-value
+  my @add_randfold = compute_randfold_pvalue(\@filtered_distances);
+  print @add_randfold;
+
   # collect the results
   push @resulted_table, @filtered_distances;
 
 }
 
-print STDOUT @resulted_table;
+#print STDOUT @resulted_table;
 
 
 #### SUBROUTINES HERE #####
@@ -109,7 +113,7 @@ sub RNALfold_parsing {
   my $input_sequence = $strs[@strs-2];
 
   # Deal with individual structure predictions
-  for(my $j=0; $j<=$#strs; $j++) {
+  for(my $j=0; $j<=$#strs-1; $j++) {
     if($strs[$j] =~ m/^[\.\(\)]/) {
         #Deal With each structure output line from RNALfold
         chomp $strs[$j];
@@ -191,7 +195,7 @@ sub distance_filtering {
 
   my $threshold = shift @_;
   my @strs = @_;
-  my @filtered_distance;
+  my @filtered;
 
   # normalization: RNAdistance x/100 and RNAforester 1/x
   for(my $i=0; $i<=$#strs; $i+=3) {
@@ -217,12 +221,39 @@ sub distance_filtering {
 
     if ($min_value <= $threshold) {
       my $scores = join('-', @new_score);
-      push @filtered_distance, join("\t", $ID, $start, 'Scores='.$scores, $dG, $sequence, $str,),"\n";
+      push @filtered, join("\t", $ID, $start, 'Scores='.$scores, $dG, $sequence, $str)."\n";
     }
   }
 
   undef(@strs);
-  return(@filtered_distance);
+  return(@filtered);
 
+}
+
+sub compute_randfold_pvalue {
+
+  my $ref_rnals = $_[0];
+  my @added_pvalues;
+
+  for my $s (@$ref_rnals) {
+    chomp $s;
+
+    my ($id, $start, $scores, $dG, $sequence, $str) = split(/\t/, $s);
+    $sequence =~ s/Seq=//;
+    
+    my $rand = int(rand(999));
+    my $fasta_file = 'temp.'.$rand.'.fasta';
+    open (my $fh, ">$fasta_file");
+    print $fh '>'.$id."\n".$sequence."\n";
+    close $fh;
+
+    my $cmd_randfold = `randfold -d $fasta_file 999`;
+    chop $cmd_randfold;
+    my $pvalue = (split(/\s+/, $cmd_randfold))[2];
+    push @added_pvalues, join("\t", $id, $start, $scores, $dG, 'P='.$pvalue, 'Seq='.$sequence, $str)."\n";
+
+    unlink($fasta_file);
+  }
+  return @added_pvalues;
 }
 
