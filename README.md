@@ -8,7 +8,7 @@ The original source code of RNA2DSearch: https://github.com/darogan/RNA2DSearch.
 
 Usage
 =====
-* Prerequisites: [BioPerl](http://www.bioperl.org/wiki/Main_Page), [RNA Vienna package](http://rna.tbi.univie.ac.at) and [RNAforester](http://bibiserv.techfak.uni-bielefeld.de/rnaforester/).
+* Prerequisites: [BioPerl](http://www.bioperl.org/wiki/Main_Page), [RNA Vienna package](http://rna.tbi.univie.ac.at), [RNAforester](http://bibiserv.techfak.uni-bielefeld.de/rnaforester/), [randfold](http://bioinformatics.psb.ugent.be/supplementary_data/erbon/nov2003).
 
 * Example of usage:
 ```html
@@ -21,7 +21,7 @@ perl RNAsls.pl -i InputFile.fasta -t 25 -w 64 -m 0.11 > OutputFile.txt
     - `-w` Maximum allowed length of the candidate hairpins, in nt. (e.g. 64)
     - `-m` Maximum allowed distance between candidate hairpin and the canonical RNA localization signals (e.g. 0.11). 'Distance' is a normalized [RNAdistance](http://rna.tbi.univie.ac.at/cgi-bin/RNAfold.cgi) score.
 
-* Output: The table with subsequences that have secondary structure similar to the canonical RNA localization signals. The level of similarity (distance) is presented in the `Scores` field as the set of score pairs. The first score in each pair is normalized [RNAdistance](http://rna.tbi.univie.ac.at/cgi-bin/RNAfold.cgi) score, while the second one is normalized and inversed [RNAforester](http://bibiserv.techfak.uni-bielefeld.de/rnaforester/) score. Since the comparison is performed with four known RNA localization signals, including GLS, ILS, G2LS, and JLS, the `Scores` field contains four pairs of scores.
+* Output: The table with subsequences that have secondary structure similar to the canonical RNA localization signals. The level of similarity (distance) is presented in the `Scores` field as the set of score pairs. The first score in each pair is normalized [RNAdistance](http://rna.tbi.univie.ac.at/cgi-bin/RNAfold.cgi) score, while the second one is normalized and inversed [RNAforester](http://bibiserv.techfak.uni-bielefeld.de/rnaforester/) score. Since the comparison is performed with four known RNA localization signals, including GLS, ILS, G2LS, and JLS, the `Scores` field contains four pairs of scores. The output table also includes the `P`-value of [randfold](http://bioinformatics.psb.ugent.be/supplementary_data/erbon/nov2003) test of hairpin stability.
 
 License
 =======
