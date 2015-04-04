@@ -2,7 +2,7 @@
 # RNAsls: the search of RNA localization signals
 
 
-The RNAsls searches the hairpins similar to the ILS and GLS - RNA localization signals in the I-element and Gurken mRNAs respectively. These signals are necessary for the proper transport of RNA along microtubes during Drosophila embryogenesis.
+The RNAsls searches the hairpins similar to the ILS and GLS - RNA localization signals in the I-element and Gurken mRNAs respectively. These signals are necessary for the proper transport of RNA along microtubes during Drosophila oogenesis.
 The code of RNAsls is just a scaled-down version of RNA2DSearch program published by Hamilton et al. 2009 (http://dx.doi.org/10.1261/rna.1264109).
 The original source code of RNA2DSearch: https://github.com/darogan/RNA2DSearch.
 
